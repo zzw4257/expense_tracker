@@ -5,10 +5,12 @@
 ## 功能
 
 - **报销记录管理** - 创建、编辑、删除报销记录
-- **凭证管理** - 发票上传、税号验证（统一社会信用代码）
+- **智能凭证解析** - 自动OCR识别发票内容（MinerU）
+- **AI摘要** - 支持GPT-5.1/Gemini/Ollama自动分析
+- **税号验证** - 统一社会信用代码校验
+- **自动聚类** - 相似记录合并建议
 - **数据分析** - 类别分布、月度趋势图表
 - **数据导出** - CSV/JSON格式导出
-- **响应式设计** - 适配桌面和移动端
 
 ## 技术栈
 
@@ -16,23 +18,39 @@
 |------|------|
 | 前端 | Flutter 3.x |
 | 状态管理 | Provider |
+| OCR | MinerU (Docker) |
+| AI | OpenAI / Gemini / Ollama |
 | 后端 | Vercel Serverless |
-| 部署 | Vercel + GitHub |
+| 部署 | Docker + Vercel |
 
-## 本地开发
+## 快速开始
+
+### 1. 启动OCR服务（Docker）
 
 ```bash
-# 安装依赖
+cd docker
+./start.sh
+```
+
+或手动启动：
+```bash
+# GPU版本
+docker compose up -d mineru
+
+# CPU版本
+docker compose --profile cpu-only up -d mineru-cpu
+```
+
+服务地址：
+- API: http://localhost:8000
+- API文档: http://localhost:8000/docs
+- WebUI: http://localhost:7860
+
+### 2. 运行Flutter应用
+
+```bash
 flutter pub get
-
-# 运行Web版
 flutter run -d chrome
-
-# 运行Android
-flutter run -d android
-
-# 运行iOS
-flutter run -d ios
 ```
 
 ## 构建
@@ -48,30 +66,50 @@ flutter build apk --release
 flutter build ios --release
 ```
 
-## 部署到Vercel
-
-1. Fork本仓库到GitHub
-2. 在Vercel中导入项目
-3. 配置构建命令: `flutter build web --release`
-4. 输出目录: `build/web`
-5. 部署
-
 ## 项目结构
 
 ```
-lib/
-├── main.dart           # 应用入口
-├── models/             # 数据模型
-├── providers/          # 状态管理
-├── screens/            # 页面
-├── theme/              # 主题配置
-└── widgets/            # 可复用组件
+├── lib/
+│   ├── main.dart
+│   ├── models/
+│   │   ├── expense.dart      # 报销/凭证模型
+│   │   └── settings.dart     # 应用设置
+│   ├── providers/
+│   ├── screens/
+│   ├── services/
+│   │   ├── ai_service.dart   # AI摘要服务
+│   │   ├── ocr_service.dart  # OCR解析服务
+│   │   └── cluster_service.dart
+│   ├── theme/
+│   └── widgets/
+├── api/                      # Vercel Serverless
+│   ├── expenses.js
+│   ├── validate-tax.js
+│   └── ocr/mineru.js
+└── docker/                   # Docker配置
+    ├── Dockerfile
+    ├── docker-compose.yml
+    └── start.sh
+```
 
-api/
-├── expenses.js         # 报销API
-└── validate-tax.js     # 税号验证API
+## MinerU配置
+
+环境变量：
+```bash
+# 国内用户（推荐）
+export MINERU_MODEL_SOURCE=modelscope
+
+# 海外用户
+export MINERU_MODEL_SOURCE=huggingface
+```
+
+本地安装：
+```bash
+pip install mineru
+mineru-models-download
+mineru-api --host 0.0.0.0 --port 8000
 ```
 
 ## UI风格
 
-Neon渐变 + 深色背景 + 像素字体，街机风格微交互。
+Neon渐变 + 深色背景 + JetBrains Mono字体
