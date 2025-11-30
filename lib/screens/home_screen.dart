@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/expense.dart';
@@ -93,8 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         selectedItemColor: NeonTheme.neonPink,
         unselectedItemColor: NeonTheme.textSecondary,
-        selectedLabelStyle: GoogleFonts.pressStart2p(fontSize: 8),
-        unselectedLabelStyle: GoogleFonts.pressStart2p(fontSize: 8),
+        selectedLabelStyle: NeonTheme.labelStyle(size: 11),
+        unselectedLabelStyle: NeonTheme.labelStyle(size: 11),
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Records'),
           BottomNavigationBarItem(icon: Icon(Icons.analytics), label: 'Analytics'),
@@ -135,10 +134,10 @@ class ExpenseListScreen extends StatelessWidget {
                   children: [
                     ShaderMask(
                       shaderCallback: (bounds) => NeonTheme.neonGradient.createShader(bounds),
-                      child: Text('EXPENSE TRACKER', style: GoogleFonts.pressStart2p(fontSize: 16, color: Colors.white)),
+                      child: Text('EXPENSE TRACKER', style: NeonTheme.titleStyle(size: 22)),
                     ),
                     const SizedBox(height: 8),
-                    Text('报销管理系统', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+                    Text('报销管理系统', style: NeonTheme.labelStyle(size: 14)),
                     const SizedBox(height: 24),
                     _buildStatsRow(provider),
                   ],
@@ -181,9 +180,9 @@ class ExpenseListScreen extends StatelessWidget {
           const SizedBox(height: 60),
           Icon(Icons.receipt_long, size: 64, color: NeonTheme.neonPink.withOpacity(0.3)),
           const SizedBox(height: 16),
-          Text('NO RECORDS', style: GoogleFonts.pressStart2p(fontSize: 12, color: NeonTheme.textSecondary)),
+          Text('NO RECORDS', style: NeonTheme.titleStyle(size: 16, color: NeonTheme.textSecondary)),
           const SizedBox(height: 8),
-          Text('点击 + 添加报销记录', style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+          Text('点击 + 添加报销记录', style: NeonTheme.labelStyle(size: 13)),
         ],
       ),
     );
@@ -283,14 +282,14 @@ class ExpenseListItem extends StatelessWidget {
                 children: [
                   Text(
                     expense.title,
-                    style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white),
+                    style: NeonTheme.bodyStyle(size: 14, weight: FontWeight.w600),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
-                      Text(expense.category.label, style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+                      Text(expense.category.label, style: NeonTheme.labelStyle(size: 12)),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -298,7 +297,7 @@ class ExpenseListItem extends StatelessWidget {
                           color: expense.status.color.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: Text(expense.status.label, style: GoogleFonts.pressStart2p(fontSize: 6, color: expense.status.color)),
+                        child: Text(expense.status.label, style: NeonTheme.labelStyle(size: 10, color: expense.status.color)),
                       ),
                     ],
                   ),
@@ -308,9 +307,9 @@ class ExpenseListItem extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('¥${expense.amount.toStringAsFixed(2)}', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.neonGreen)),
+                Text('¥${expense.amount.toStringAsFixed(2)}', style: NeonTheme.bodyStyle(size: 15, color: NeonTheme.neonGreen, weight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(DateFormat('MM/dd').format(expense.date), style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+                Text(DateFormat('MM/dd').format(expense.date), style: NeonTheme.labelStyle(size: 12)),
               ],
             ),
           ],
@@ -359,12 +358,12 @@ class ExpenseDetailSheet extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(expense.title, style: GoogleFonts.pressStart2p(fontSize: 12, color: Colors.white)),
+                            Text(expense.title, style: NeonTheme.bodyStyle(size: 16, weight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(color: expense.status.color.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-                              child: Text(expense.status.label, style: GoogleFonts.pressStart2p(fontSize: 8, color: expense.status.color)),
+                              child: Text(expense.status.label, style: NeonTheme.labelStyle(size: 11, color: expense.status.color)),
                             ),
                           ],
                         ),
@@ -377,10 +376,10 @@ class ExpenseDetailSheet extends StatelessWidget {
                   _buildDetailRow('日期', DateFormat('yyyy-MM-dd').format(expense.date), NeonTheme.neonYellow),
                   if (expense.description != null) _buildDetailRow('备注', expense.description!, NeonTheme.textSecondary),
                   const SizedBox(height: 24),
-                  Text('凭证 (${expense.receipts.length})', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+                  Text('凭证 (${expense.receipts.length})', style: NeonTheme.bodyStyle(size: 14, color: NeonTheme.textSecondary)),
                   const SizedBox(height: 12),
                   if (expense.receipts.isEmpty)
-                    Text('无凭证', style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary.withOpacity(0.5)))
+                    Text('无凭证', style: NeonTheme.labelStyle(size: 12, color: NeonTheme.textSecondary.withOpacity(0.5)))
                   else
                     ...expense.receipts.map((r) => _buildReceiptItem(r)),
                   const SizedBox(height: 32),
@@ -414,8 +413,8 @@ class ExpenseDetailSheet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 80, child: Text(label, style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary))),
-          Expanded(child: Text(value, style: GoogleFonts.pressStart2p(fontSize: 10, color: valueColor))),
+          SizedBox(width: 80, child: Text(label, style: NeonTheme.labelStyle(size: 13))),
+          Expanded(child: Text(value, style: NeonTheme.bodyStyle(size: 14, color: valueColor))),
         ],
       ),
     );
@@ -438,12 +437,12 @@ class ExpenseDetailSheet extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(r.type == 'invoice' ? '发票' : '支付凭证', style: GoogleFonts.pressStart2p(fontSize: 8, color: Colors.white)),
-                if (r.taxNumber != null) Text(r.taxNumber!, style: GoogleFonts.pressStart2p(fontSize: 6, color: NeonTheme.textSecondary)),
+                Text(r.type == 'invoice' ? '发票' : '支付凭证', style: NeonTheme.bodyStyle(size: 13)),
+                if (r.taxNumber != null) Text(r.taxNumber!, style: NeonTheme.labelStyle(size: 11)),
               ],
             ),
           ),
-          Text(r.isValid ? '已验证' : '待验证', style: GoogleFonts.pressStart2p(fontSize: 6, color: r.isValid ? NeonTheme.neonGreen : NeonTheme.neonYellow)),
+          Text(r.isValid ? '已验证' : '待验证', style: NeonTheme.labelStyle(size: 11, color: r.isValid ? NeonTheme.neonGreen : NeonTheme.neonYellow)),
         ],
       ),
     );

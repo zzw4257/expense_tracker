@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../theme/neon_theme.dart';
 
 class NeonButton extends StatefulWidget {
@@ -94,7 +93,7 @@ class _NeonButtonState extends State<NeonButton> with SingleTickerProviderStateM
                         ],
                         Text(
                           widget.label,
-                          style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white),
+                          style: NeonTheme.bodyStyle(size: 13, color: Colors.white, weight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -195,12 +194,12 @@ class StatCard extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             title,
-            style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary),
+            style: NeonTheme.labelStyle(size: 11),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             value,
-            style: GoogleFonts.pressStart2p(fontSize: 12, color: color),
+            style: NeonTheme.bodyStyle(size: 15, color: color, weight: FontWeight.bold),
           ),
         ],
       ),

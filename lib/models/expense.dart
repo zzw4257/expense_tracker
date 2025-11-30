@@ -23,39 +23,180 @@ enum ExpenseStatus {
   const ExpenseStatus(this.label, this.color);
 }
 
+// 凭证类型
+enum DocumentType {
+  invoice('发票', Icons.receipt_long, ['pdf', 'jpg', 'png', 'jpeg']),
+  paymentProof('支付凭证', Icons.payment, ['jpg', 'png', 'jpeg', 'pdf']),
+  contract('合同', Icons.description, ['pdf', 'docx', 'doc']),
+  receipt('收据', Icons.receipt, ['jpg', 'png', 'jpeg', 'pdf']),
+  other('其他', Icons.attach_file, ['pdf', 'jpg', 'png', 'jpeg', 'docx', 'txt', 'md', 'html']);
+
+  final String label;
+  final IconData icon;
+  final List<String> allowedExtensions;
+  const DocumentType(this.label, this.icon, this.allowedExtensions);
+}
+
+// 文件格式
+enum FileFormat {
+  image('图片', Icons.image),
+  pdf('PDF', Icons.picture_as_pdf),
+  document('文档', Icons.article),
+  text('文本', Icons.text_snippet);
+
+  final String label;
+  final IconData icon;
+  const FileFormat(this.label, this.icon);
+
+  static FileFormat fromExtension(String ext) {
+    final lower = ext.toLowerCase();
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(lower)) return FileFormat.image;
+    if (lower == 'pdf') return FileFormat.pdf;
+    if (['doc', 'docx', 'html'].contains(lower)) return FileFormat.document;
+    return FileFormat.text;
+  }
+}
+
+// OCR/AI解析状态
+enum ParseStatus {
+  pending('待解析'),
+  parsing('解析中'),
+  completed('已完成'),
+  failed('解析失败');
+
+  final String label;
+  const ParseStatus(this.label);
+}
+
 class Receipt {
   final String id;
-  final String type;
+  final DocumentType documentType;
+  final FileFormat fileFormat;
+  final String? fileName;
+  final String? filePath;
+  final String? fileUrl;
+  final int? fileSize;
   final String? taxNumber;
-  final String? imagePath;
+  final String? extractedText;
+  final String? aiSummary;
+  final Map<String, dynamic>? parsedData;
+  final ParseStatus parseStatus;
   final DateTime uploadedAt;
   final bool isValid;
 
   Receipt({
     required this.id,
-    required this.type,
+    required this.documentType,
+    required this.fileFormat,
+    this.fileName,
+    this.filePath,
+    this.fileUrl,
+    this.fileSize,
     this.taxNumber,
-    this.imagePath,
+    this.extractedText,
+    this.aiSummary,
+    this.parsedData,
+    this.parseStatus = ParseStatus.pending,
     required this.uploadedAt,
     this.isValid = false,
   });
 
+  // 兼容旧数据
+  String get type => documentType.name;
+
   Map<String, dynamic> toJson() => {
         'id': id,
-        'type': type,
+        'documentType': documentType.name,
+        'fileFormat': fileFormat.name,
+        'fileName': fileName,
+        'filePath': filePath,
+        'fileUrl': fileUrl,
+        'fileSize': fileSize,
         'taxNumber': taxNumber,
-        'imagePath': imagePath,
+        'extractedText': extractedText,
+        'aiSummary': aiSummary,
+        'parsedData': parsedData,
+        'parseStatus': parseStatus.name,
         'uploadedAt': uploadedAt.toIso8601String(),
         'isValid': isValid,
       };
 
-  factory Receipt.fromJson(Map<String, dynamic> json) => Receipt(
-        id: json['id'],
-        type: json['type'],
-        taxNumber: json['taxNumber'],
-        imagePath: json['imagePath'],
-        uploadedAt: DateTime.parse(json['uploadedAt']),
-        isValid: json['isValid'] ?? false,
+  factory Receipt.fromJson(Map<String, dynamic> json) {
+    // 兼容旧数据格式
+    DocumentType docType;
+    if (json['documentType'] != null) {
+      docType = DocumentType.values.firstWhere(
+        (e) => e.name == json['documentType'],
+        orElse: () => DocumentType.other,
+      );
+    } else {
+      // 旧格式兼容
+      final oldType = json['type'] as String?;
+      docType = oldType == 'invoice' ? DocumentType.invoice : DocumentType.paymentProof;
+    }
+
+    FileFormat format;
+    if (json['fileFormat'] != null) {
+      format = FileFormat.values.firstWhere(
+        (e) => e.name == json['fileFormat'],
+        orElse: () => FileFormat.image,
+      );
+    } else {
+      format = FileFormat.image;
+    }
+
+    return Receipt(
+      id: json['id'],
+      documentType: docType,
+      fileFormat: format,
+      fileName: json['fileName'],
+      filePath: json['filePath'] ?? json['imagePath'],
+      fileUrl: json['fileUrl'],
+      fileSize: json['fileSize'],
+      taxNumber: json['taxNumber'],
+      extractedText: json['extractedText'],
+      aiSummary: json['aiSummary'],
+      parsedData: json['parsedData'],
+      parseStatus: json['parseStatus'] != null
+          ? ParseStatus.values.firstWhere(
+              (e) => e.name == json['parseStatus'],
+              orElse: () => ParseStatus.pending,
+            )
+          : ParseStatus.pending,
+      uploadedAt: DateTime.parse(json['uploadedAt']),
+      isValid: json['isValid'] ?? false,
+    );
+  }
+
+  Receipt copyWith({
+    DocumentType? documentType,
+    FileFormat? fileFormat,
+    String? fileName,
+    String? filePath,
+    String? fileUrl,
+    int? fileSize,
+    String? taxNumber,
+    String? extractedText,
+    String? aiSummary,
+    Map<String, dynamic>? parsedData,
+    ParseStatus? parseStatus,
+    bool? isValid,
+  }) =>
+      Receipt(
+        id: id,
+        documentType: documentType ?? this.documentType,
+        fileFormat: fileFormat ?? this.fileFormat,
+        fileName: fileName ?? this.fileName,
+        filePath: filePath ?? this.filePath,
+        fileUrl: fileUrl ?? this.fileUrl,
+        fileSize: fileSize ?? this.fileSize,
+        taxNumber: taxNumber ?? this.taxNumber,
+        extractedText: extractedText ?? this.extractedText,
+        aiSummary: aiSummary ?? this.aiSummary,
+        parsedData: parsedData ?? this.parsedData,
+        parseStatus: parseStatus ?? this.parseStatus,
+        uploadedAt: uploadedAt,
+        isValid: isValid ?? this.isValid,
       );
 }
 

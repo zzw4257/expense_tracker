@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/expense_provider.dart';
@@ -19,10 +18,10 @@ class SettingsScreen extends StatelessWidget {
         children: [
           ShaderMask(
             shaderCallback: (bounds) => NeonTheme.neonGradient.createShader(bounds),
-            child: Text('SETTINGS', style: GoogleFonts.pressStart2p(fontSize: 16, color: Colors.white)),
+            child: Text('SETTINGS', style: NeonTheme.titleStyle(size: 22)),
           ),
           const SizedBox(height: 8),
-          Text('设置', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+          Text('设置', style: NeonTheme.labelStyle(size: 14)),
           const SizedBox(height: 24),
           _buildExportSection(context),
           const SizedBox(height: 16),
@@ -41,9 +40,9 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.download, color: NeonTheme.neonCyan),
+              const Icon(Icons.download, color: NeonTheme.neonCyan, size: 24),
               const SizedBox(width: 12),
-              Text('导出数据', style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white)),
+              Text('导出数据', style: NeonTheme.bodyStyle(size: 15, weight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 16),
@@ -80,9 +79,9 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.storage, color: NeonTheme.neonYellow),
+              const Icon(Icons.storage, color: NeonTheme.neonYellow, size: 24),
               const SizedBox(width: 12),
-              Text('数据管理', style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white)),
+              Text('数据管理', style: NeonTheme.bodyStyle(size: 15, weight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 16),
@@ -118,9 +117,9 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.info_outline, color: NeonTheme.neonPink),
+              const Icon(Icons.info_outline, color: NeonTheme.neonPink, size: 24),
               const SizedBox(width: 12),
-              Text('关于', style: GoogleFonts.pressStart2p(fontSize: 10, color: Colors.white)),
+              Text('关于', style: NeonTheme.bodyStyle(size: 15, weight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 16),
@@ -129,7 +128,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '报销管理应用，支持记录、凭证管理、数据分析和导出功能。',
-            style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary),
+            style: NeonTheme.labelStyle(size: 12),
           ),
         ],
       ),
@@ -138,12 +137,12 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
-          Text(value, style: GoogleFonts.pressStart2p(fontSize: 8, color: Colors.white)),
+          Text(label, style: NeonTheme.labelStyle(size: 13)),
+          Text(value, style: NeonTheme.bodyStyle(size: 13)),
         ],
       ),
     );
@@ -155,7 +154,7 @@ class SettingsScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: csv));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('CSV已复制到剪贴板', style: GoogleFonts.pressStart2p(fontSize: 8)),
+        content: Text('CSV已复制到剪贴板', style: NeonTheme.bodyStyle(size: 12)),
         backgroundColor: NeonTheme.neonGreen,
       ),
     );
@@ -167,7 +166,7 @@ class SettingsScreen extends StatelessWidget {
     Clipboard.setData(ClipboardData(text: data));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('JSON已复制到剪贴板', style: GoogleFonts.pressStart2p(fontSize: 8)),
+        content: Text('JSON已复制到剪贴板', style: NeonTheme.bodyStyle(size: 12)),
         backgroundColor: NeonTheme.neonCyan,
       ),
     );
@@ -182,12 +181,12 @@ class SettingsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: Colors.red.withOpacity(0.5)),
         ),
-        title: Text('确认清除', style: GoogleFonts.pressStart2p(fontSize: 12, color: Colors.white)),
-        content: Text('此操作将删除所有报销记录，无法恢复。', style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+        title: Text('确认清除', style: NeonTheme.titleStyle(size: 16)),
+        content: Text('此操作将删除所有报销记录，无法恢复。', style: NeonTheme.labelStyle(size: 13)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('取消', style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+            child: Text('取消', style: NeonTheme.labelStyle(size: 12)),
           ),
           NeonButton(
             label: '确认',

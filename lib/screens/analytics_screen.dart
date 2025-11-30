@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
 import '../providers/expense_provider.dart';
@@ -20,10 +19,10 @@ class AnalyticsScreen extends StatelessWidget {
             children: [
               ShaderMask(
                 shaderCallback: (bounds) => NeonTheme.neonGradient.createShader(bounds),
-                child: Text('ANALYTICS', style: GoogleFonts.pressStart2p(fontSize: 16, color: Colors.white)),
+                child: Text('ANALYTICS', style: NeonTheme.titleStyle(size: 22)),
               ),
               const SizedBox(height: 8),
-              Text('数据分析', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+              Text('数据分析', style: NeonTheme.labelStyle(size: 14)),
               const SizedBox(height: 24),
               _buildSummaryCards(provider),
               const SizedBox(height: 24),
@@ -70,7 +69,7 @@ class AnalyticsScreen extends StatelessWidget {
         child: SizedBox(
           height: 200,
           child: Center(
-            child: Text('暂无数据', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+            child: Text('暂无数据', style: NeonTheme.labelStyle(size: 14)),
           ),
         ),
       );
@@ -89,7 +88,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('类别分布', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+          Text('类别分布', style: NeonTheme.bodyStyle(size: 14, color: NeonTheme.textSecondary)),
           const SizedBox(height: 16),
           SizedBox(
             height: 200,
@@ -106,7 +105,7 @@ class AnalyticsScreen extends StatelessWidget {
                     value: data.value,
                     title: '${percentage.toStringAsFixed(0)}%',
                     radius: 50,
-                    titleStyle: GoogleFonts.pressStart2p(fontSize: 8, color: Colors.white),
+                    titleStyle: NeonTheme.labelStyle(size: 11, color: Colors.white),
                   );
                 }).toList(),
               ),
@@ -128,7 +127,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('月度趋势', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+          Text('月度趋势', style: NeonTheme.bodyStyle(size: 14, color: NeonTheme.textSecondary)),
           const SizedBox(height: 16),
           SizedBox(
             height: 200,
@@ -141,7 +140,7 @@ class AnalyticsScreen extends StatelessWidget {
                     getTooltipItem: (group, groupIndex, rod, rodIndex) {
                       return BarTooltipItem(
                         '¥${rod.toY.toStringAsFixed(0)}',
-                        GoogleFonts.pressStart2p(fontSize: 8, color: Colors.white),
+                        NeonTheme.labelStyle(size: 11, color: Colors.white),
                       );
                     },
                   ),
@@ -156,7 +155,7 @@ class AnalyticsScreen extends StatelessWidget {
                         final month = recentKeys[value.toInt()].split('-')[1];
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: Text(month, style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.textSecondary)),
+                          child: Text(month, style: NeonTheme.labelStyle(size: 11)),
                         );
                       },
                     ),
@@ -198,7 +197,7 @@ class AnalyticsScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('类别明细', style: GoogleFonts.pressStart2p(fontSize: 10, color: NeonTheme.textSecondary)),
+          Text('类别明细', style: NeonTheme.bodyStyle(size: 14, color: NeonTheme.textSecondary)),
           const SizedBox(height: 16),
           ...sortedEntries.map((entry) {
             final percentage = entry.value / provider.totalAmount;
@@ -211,9 +210,9 @@ class AnalyticsScreen extends StatelessWidget {
                     children: [
                       Icon(entry.key.icon, size: 16, color: NeonTheme.neonPink),
                       const SizedBox(width: 8),
-                      Text(entry.key.label, style: GoogleFonts.pressStart2p(fontSize: 8, color: Colors.white)),
+                      Text(entry.key.label, style: NeonTheme.bodyStyle(size: 13)),
                       const Spacer(),
-                      Text('¥${entry.value.toStringAsFixed(0)}', style: GoogleFonts.pressStart2p(fontSize: 8, color: NeonTheme.neonGreen)),
+                      Text('¥${entry.value.toStringAsFixed(0)}', style: NeonTheme.bodyStyle(size: 13, color: NeonTheme.neonGreen)),
                     ],
                   ),
                   const SizedBox(height: 4),
