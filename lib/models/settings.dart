@@ -11,13 +11,35 @@ enum OcrProvider {
 }
 
 enum AiProvider {
-  openai('OpenAI', 'GPT-4.1'),
-  gemini('Gemini', 'Gemini 2.5 Flash'),
+  openai('OpenAI', 'gpt-5.1'),
+  gemini('Gemini', 'gemini-2.5-flash'),
   ollama('Ollama', '本地模型');
 
   final String label;
   final String model;
   const AiProvider(this.label, this.model);
+}
+
+// MinerU后端类型
+enum MinerUBackend {
+  pipeline('Pipeline', '默认后端，适合大多数场景'),
+  vlmTransformers('VLM-Transformers', '视觉语言模型，更精准'),
+  vlmHttpClient('VLM-HTTP-Client', '远程VLM服务');
+
+  final String label;
+  final String description;
+  const MinerUBackend(this.label, this.description);
+}
+
+// MinerU模型源
+enum MinerUModelSource {
+  modelscope('ModelScope', '国内用户推荐'),
+  huggingface('HuggingFace', '海外用户'),
+  local('Local', '本地模型');
+
+  final String label;
+  final String description;
+  const MinerUModelSource(this.label, this.description);
 }
 
 class AppSettings {
@@ -26,6 +48,9 @@ class AppSettings {
   final bool autoParseOnUpload;
   final String? minerUApiKey;
   final String? minerUEndpoint;
+  final MinerUBackend minerUBackend;
+  final MinerUModelSource minerUModelSource;
+  final bool minerUUseVllm;
 
   // AI设置
   final AiProvider aiProvider;
@@ -55,6 +80,9 @@ class AppSettings {
     this.autoParseOnUpload = true,
     this.minerUApiKey,
     this.minerUEndpoint,
+    this.minerUBackend = MinerUBackend.pipeline,
+    this.minerUModelSource = MinerUModelSource.modelscope,
+    this.minerUUseVllm = false,
     this.aiProvider = AiProvider.gemini,
     this.autoSummarize = true,
     this.openaiApiKey,
@@ -76,11 +104,27 @@ class AppSettings {
     }
   }
 
+  /// MinerU启动命令提示
+  String get minerUStartCommand {
+    final backend = minerUBackend == MinerUBackend.pipeline 
+        ? '' 
+        : ' -b ${minerUBackend.name.replaceAll('vlm', 'vlm-').toLowerCase()}';
+    return 'mineru-api --host 0.0.0.0 --port 8000$backend';
+  }
+
+  /// MinerU环境变量
+  String get minerUEnvCommand {
+    return 'export MINERU_MODEL_SOURCE=${minerUModelSource.name.toLowerCase()}';
+  }
+
   Map<String, dynamic> toJson() => {
         'ocrProvider': ocrProvider.name,
         'autoParseOnUpload': autoParseOnUpload,
         'minerUApiKey': minerUApiKey,
         'minerUEndpoint': minerUEndpoint,
+        'minerUBackend': minerUBackend.name,
+        'minerUModelSource': minerUModelSource.name,
+        'minerUUseVllm': minerUUseVllm,
         'aiProvider': aiProvider.name,
         'autoSummarize': autoSummarize,
         'openaiApiKey': openaiApiKey,
@@ -99,6 +143,15 @@ class AppSettings {
         autoParseOnUpload: json['autoParseOnUpload'] ?? true,
         minerUApiKey: json['minerUApiKey'],
         minerUEndpoint: json['minerUEndpoint'],
+        minerUBackend: MinerUBackend.values.firstWhere(
+          (e) => e.name == json['minerUBackend'],
+          orElse: () => MinerUBackend.pipeline,
+        ),
+        minerUModelSource: MinerUModelSource.values.firstWhere(
+          (e) => e.name == json['minerUModelSource'],
+          orElse: () => MinerUModelSource.modelscope,
+        ),
+        minerUUseVllm: json['minerUUseVllm'] ?? false,
         aiProvider: AiProvider.values.firstWhere(
           (e) => e.name == json['aiProvider'],
           orElse: () => AiProvider.gemini,
@@ -117,6 +170,9 @@ class AppSettings {
     bool? autoParseOnUpload,
     String? minerUApiKey,
     String? minerUEndpoint,
+    MinerUBackend? minerUBackend,
+    MinerUModelSource? minerUModelSource,
+    bool? minerUUseVllm,
     AiProvider? aiProvider,
     bool? autoSummarize,
     String? openaiApiKey,
@@ -131,6 +187,9 @@ class AppSettings {
         autoParseOnUpload: autoParseOnUpload ?? this.autoParseOnUpload,
         minerUApiKey: minerUApiKey ?? this.minerUApiKey,
         minerUEndpoint: minerUEndpoint ?? this.minerUEndpoint,
+        minerUBackend: minerUBackend ?? this.minerUBackend,
+        minerUModelSource: minerUModelSource ?? this.minerUModelSource,
+        minerUUseVllm: minerUUseVllm ?? this.minerUUseVllm,
         aiProvider: aiProvider ?? this.aiProvider,
         autoSummarize: autoSummarize ?? this.autoSummarize,
         openaiApiKey: openaiApiKey ?? this.openaiApiKey,
