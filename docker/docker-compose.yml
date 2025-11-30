@@ -1,14 +1,35 @@
 version: '3.8'
 
 services:
-  # MinerU OCR服务
-  mineru:
-    image: opendatalab/mineru:latest
-    container_name: expense-mineru
+  # 轻量OCR服务（基于PaddleOCR，更易部署）
+  ocr:
+    build:
+      context: .
+      dockerfile: Dockerfile.ocr
+    container_name: expense-ocr
     restart: unless-stopped
     ports:
-      - "8000:8000"   # API
-      - "7860:7860"   # WebUI
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      - PYTHONUNBUFFERED=1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MinerU OCR服务（需要GPU，可选）
+  mineru:
+    image: registry.cn-hangzhou.aliyuncs.com/opendatalab/mineru:latest
+    container_name: expense-mineru
+    restart: unless-stopped
+    profiles:
+      - gpu
+    ports:
+      - "8001:8000"
+      - "7860:7860"
     volumes:
       - mineru-models:/root/.cache/mineru
       - ./uploads:/app/uploads
@@ -21,29 +42,6 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    command: mineru-api --host 0.0.0.0 --port 8000
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # 备用：CPU-only MinerU（无GPU时使用）
-  mineru-cpu:
-    image: opendatalab/mineru:latest
-    container_name: expense-mineru-cpu
-    restart: unless-stopped
-    profiles:
-      - cpu-only
-    ports:
-      - "8000:8000"
-      - "7860:7860"
-    volumes:
-      - mineru-models:/root/.cache/mineru
-      - ./uploads:/app/uploads
-    environment:
-      - MINERU_MODEL_SOURCE=modelscope
-      - CUDA_VISIBLE_DEVICES=""
     command: mineru-api --host 0.0.0.0 --port 8000
 
 volumes:

@@ -1,29 +1,50 @@
 #!/bin/bash
-# MinerU OCR服务启动脚本
+# OCR服务启动脚本
 
 set -e
 
-echo "=== Expense Tracker - MinerU OCR Service ==="
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+echo "=== Expense Tracker - OCR Service ==="
 
 # 检查Docker
 if ! command -v docker &> /dev/null; then
     echo "Error: Docker not installed"
+    echo "Please install Docker: https://docs.docker.com/get-docker/"
     exit 1
 fi
 
-# 检查GPU
-if command -v nvidia-smi &> /dev/null; then
-    echo "GPU detected, starting with GPU support..."
-    docker compose up -d mineru
-else
-    echo "No GPU detected, starting CPU-only mode..."
-    docker compose --profile cpu-only up -d mineru-cpu
-fi
+# 创建uploads目录
+mkdir -p uploads
+
+# 构建并启动OCR服务
+echo "Building OCR service..."
+docker compose build ocr
+
+echo "Starting OCR service..."
+docker compose up -d ocr
+
+# 等待服务启动
+echo "Waiting for service to start..."
+for i in {1..30}; do
+    if curl -s http://localhost:8000/health > /dev/null 2>&1; then
+        echo ""
+        echo "=== OCR Service Started ==="
+        echo "- API: http://localhost:8000"
+        echo "- API Docs: http://localhost:8000/docs"
+        echo "- Health: http://localhost:8000/health"
+        echo ""
+        echo "Test command:"
+        echo "  curl -X POST http://localhost:8000/image/parse -F 'file=@test.jpg'"
+        echo ""
+        echo "View logs: docker compose logs -f ocr"
+        exit 0
+    fi
+    sleep 1
+    echo -n "."
+done
 
 echo ""
-echo "Services started!"
-echo "- API: http://localhost:8000"
-echo "- API Docs: http://localhost:8000/docs"
-echo "- WebUI: http://localhost:7860"
-echo ""
-echo "Check logs: docker compose logs -f"
+echo "Warning: Service may not be ready yet"
+echo "Check logs: docker compose logs ocr"

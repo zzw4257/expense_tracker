@@ -29,7 +29,7 @@ class MinerUConfig {
   final int? port;
 
   MinerUConfig({
-    this.endpoint = 'http://127.0.0.1:8000',
+    this.endpoint = 'http://localhost:8000', // 本地OCR服务
     this.apiKey,
     this.backend = 'pipeline',
     this.modelSource = 'modelscope', // 国内默认用modelscope
