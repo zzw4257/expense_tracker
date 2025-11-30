@@ -462,13 +462,24 @@ docker compose --profile gpu up -d mineru
 
 ### 环境变量
 
+在项目根目录创建 `.env` 文件：
+
+```bash
+# AI服务 (必选其一)
+GEMINI_API_KEY=your_gemini_api_key  # 推荐，默认使用
+
+# 可选
+OPENAI_API_KEY=your_openai_api_key
+OLLAMA_ENDPOINT=http://localhost:11434
+```
+
 | 变量 | 描述 | 默认值 |
 |------|------|--------|
+| `GEMINI_API_KEY` | **Gemini API密钥 (推荐)** | - |
+| `OPENAI_API_KEY` | OpenAI API密钥 | - |
+| `OLLAMA_ENDPOINT` | Ollama服务地址 | `http://localhost:11434` |
 | `MINERU_MODEL_SOURCE` | 模型下载源 | `modelscope` |
 | `OCR_ENDPOINT` | OCR服务地址 | `http://localhost:8000` |
-| `OPENAI_API_KEY` | OpenAI API密钥 | - |
-| `GEMINI_API_KEY` | Gemini API密钥 | - |
-| `OLLAMA_ENDPOINT` | Ollama服务地址 | `http://localhost:11434` |
 
 ### 应用设置 (settings.dart)
 
