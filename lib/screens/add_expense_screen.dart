@@ -201,103 +201,94 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       children: [
         Row(
           children: [
+            const Icon(Icons.attachment, size: 18, color: NeonTheme.neonCyan),
+            const SizedBox(width: 8),
             Text('凭证', style: NeonTheme.labelStyle(size: 14)),
+            if (_receipts.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: NeonTheme.neonCyan.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('${_receipts.length}', style: NeonTheme.labelStyle(size: 11, color: NeonTheme.neonCyan)),
+              ),
+            ],
             const Spacer(),
             TextButton.icon(
               onPressed: _addReceipt,
-              icon: const Icon(Icons.add, size: 18),
-              label: Text('添加', style: NeonTheme.bodyStyle(size: 13, color: NeonTheme.neonCyan)),
+              icon: const Icon(Icons.add, size: 16),
+              label: Text('上传', style: NeonTheme.bodyStyle(size: 12, color: NeonTheme.neonCyan)),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         if (_receipts.isEmpty)
           GestureDetector(
             onTap: _addReceipt,
             child: Container(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.symmetric(vertical: 24),
               decoration: BoxDecoration(
                 color: NeonTheme.bgCard,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: NeonTheme.neonPink.withOpacity(0.2)),
               ),
-              child: Center(
-                child: Column(
-                  children: [
-                    Icon(Icons.cloud_upload_outlined, size: 48, color: NeonTheme.textSecondary.withOpacity(0.5)),
-                    const SizedBox(height: 12),
-                    Text('点击上传凭证文件', style: NeonTheme.labelStyle(size: 13)),
-                    const SizedBox(height: 6),
-                    Text('支持图片、PDF、文档等格式', style: NeonTheme.labelStyle(size: 11, color: NeonTheme.textSecondary.withOpacity(0.6))),
-                  ],
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_circle_outline, size: 20, color: NeonTheme.textSecondary.withOpacity(0.5)),
+                  const SizedBox(width: 8),
+                  Text('添加发票或凭证', style: NeonTheme.labelStyle(size: 13)),
+                ],
               ),
             ),
           )
         else
-          ...List.generate(_receipts.length, (index) => _buildReceiptItem(_receipts[index], index)),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(_receipts.length, (index) => _buildReceiptChip(_receipts[index], index)),
+          ),
       ],
     );
   }
 
-  Widget _buildReceiptItem(Receipt receipt, int index) {
-    final statusColor = receipt.isValid ? NeonTheme.neonGreen : NeonTheme.neonYellow;
+  Widget _buildReceiptChip(Receipt receipt, int index) {
+    final color = receipt.parseStatus == ParseStatus.completed 
+        ? NeonTheme.neonGreen 
+        : receipt.parseStatus == ParseStatus.parsing 
+            ? NeonTheme.neonCyan 
+            : NeonTheme.neonYellow;
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
       decoration: BoxDecoration(
         color: NeonTheme.bgCard,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: statusColor.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.4)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(receipt.documentType.icon, color: statusColor, size: 22),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(receipt.documentType.label, style: NeonTheme.bodyStyle(size: 14)),
-                const SizedBox(height: 4),
-                if (receipt.fileName != null)
-                  Text(receipt.fileName!, style: NeonTheme.labelStyle(size: 11), maxLines: 1, overflow: TextOverflow.ellipsis)
-                else if (receipt.taxNumber != null)
-                  Text('税号: ${receipt.taxNumber}', style: NeonTheme.labelStyle(size: 11)),
-                if (receipt.parseStatus != ParseStatus.pending)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: Row(
-                      children: [
-                        Icon(
-                          receipt.parseStatus == ParseStatus.completed ? Icons.check_circle : 
-                          receipt.parseStatus == ParseStatus.parsing ? Icons.hourglass_empty : Icons.error,
-                          size: 12,
-                          color: receipt.parseStatus == ParseStatus.completed ? NeonTheme.neonGreen : NeonTheme.neonYellow,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(receipt.parseStatus.label, style: NeonTheme.labelStyle(size: 10)),
-                      ],
-                    ),
-                  ),
-              ],
+          Icon(receipt.fileFormat.icon, size: 16, color: color),
+          const SizedBox(width: 6),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 100),
+            child: Text(
+              receipt.fileName ?? receipt.documentType.label,
+              style: NeonTheme.labelStyle(size: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: statusColor.withOpacity(0.2), borderRadius: BorderRadius.circular(6)),
-            child: Text(receipt.isValid ? '已验证' : '待验证', style: NeonTheme.labelStyle(size: 10, color: statusColor)),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18, color: NeonTheme.textSecondary),
-            onPressed: () => setState(() => _receipts.removeAt(index)),
+          const SizedBox(width: 2),
+          InkWell(
+            onTap: () => setState(() => _receipts.removeAt(index)),
+            child: const Padding(
+              padding: EdgeInsets.all(4),
+              child: Icon(Icons.close, size: 14, color: NeonTheme.textSecondary),
+            ),
           ),
         ],
       ),
@@ -335,7 +326,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
   }
 }
 
-// 新的凭证添加Sheet
+// 简化的凭证上传组件 - 自动解析
 class AddReceiptSheet extends StatefulWidget {
   final Function(Receipt) onAdd;
   final bool Function(String) validateTaxNumber;
@@ -347,193 +338,220 @@ class AddReceiptSheet extends StatefulWidget {
 }
 
 class _AddReceiptSheetState extends State<AddReceiptSheet> {
-  DocumentType _documentType = DocumentType.invoice;
-  final _taxController = TextEditingController();
-  bool _isValid = false;
   String? _fileName;
   String? _filePath;
   int? _fileSize;
   FileFormat _fileFormat = FileFormat.image;
   bool _isUploading = false;
-
-  @override
-  void dispose() {
-    _taxController.dispose();
-    super.dispose();
-  }
+  String? _parseStatus;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
+      height: MediaQuery.of(context).size.height * 0.5,
       decoration: const BoxDecoration(
         color: NeonTheme.bgDark,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         children: [
+          // 拖拽指示器
           Container(
             margin: const EdgeInsets.only(top: 12),
             width: 40,
             height: 4,
-            decoration: BoxDecoration(color: NeonTheme.neonPink.withOpacity(0.5), borderRadius: BorderRadius.circular(2)),
+            decoration: BoxDecoration(
+              color: NeonTheme.neonPink.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
+          // 标题
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
             child: Row(
               children: [
-                Text('添加凭证', style: NeonTheme.titleStyle(size: 18)),
+                const Icon(Icons.auto_awesome, color: NeonTheme.neonCyan, size: 20),
+                const SizedBox(width: 8),
+                Text('上传凭证', style: NeonTheme.titleStyle(size: 18)),
                 const Spacer(),
-                IconButton(icon: const Icon(Icons.close, color: NeonTheme.textSecondary), onPressed: () => Navigator.pop(context)),
+                IconButton(
+                  icon: const Icon(Icons.close, color: NeonTheme.textSecondary),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ],
             ),
           ),
+          // 提示
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Text(
+              '支持发票、收据、合同等，自动识别解析',
+              style: NeonTheme.labelStyle(size: 12, color: NeonTheme.textSecondary.withOpacity(0.7)),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // 上传区域
           Expanded(
-            child: SingleChildScrollView(
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: _buildUploadArea(),
+            ),
+          ),
+          // 底部按钮
+          if (_fileName != null)
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: SizedBox(
+                width: double.infinity,
+                child: NeonButton(
+                  label: _isUploading ? '解析中...' : '确认上传',
+                  icon: _isUploading ? Icons.hourglass_empty : Icons.check,
+                  isLoading: _isUploading,
+                  onPressed: _isUploading ? () {} : _uploadAndParse,
+                ),
+              ),
+            ),
+          if (_fileName == null) const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadArea() {
+    if (_fileName != null) {
+      return _buildFilePreview();
+    }
+    return _buildDropZone();
+  }
+
+  Widget _buildDropZone() {
+    return GestureDetector(
+      onTap: _pickFile,
+      child: Container(
+        decoration: BoxDecoration(
+          color: NeonTheme.bgCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: NeonTheme.neonPink.withOpacity(0.3),
+            width: 2,
+            strokeAlign: BorderSide.strokeAlignInside,
+          ),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: NeonTheme.neonPink.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.add_photo_alternate_outlined,
+                  size: 40,
+                  color: NeonTheme.neonPink.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('点击选择文件', style: NeonTheme.bodyStyle(size: 15)),
+              const SizedBox(height: 8),
+              Text(
+                '图片 / PDF / 文档',
+                style: NeonTheme.labelStyle(size: 12, color: NeonTheme.textSecondary.withOpacity(0.6)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilePreview() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: NeonTheme.bgCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: NeonTheme.neonGreen.withOpacity(0.5)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 文件图标
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: NeonTheme.neonGreen.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(_fileFormat.icon, size: 36, color: NeonTheme.neonGreen),
+          ),
+          const SizedBox(height: 16),
+          // 文件名
+          Text(
+            _fileName!,
+            style: NeonTheme.bodyStyle(size: 14),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          // 文件大小
+          if (_fileSize != null)
+            Text(
+              _formatFileSize(_fileSize!),
+              style: NeonTheme.labelStyle(size: 12),
+            ),
+          // 解析状态
+          if (_parseStatus != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: NeonTheme.neonCyan.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('凭证类型', style: NeonTheme.labelStyle(size: 14)),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: DocumentType.values.map((type) => _buildTypeChip(type)).toList(),
-                  ),
-                  const SizedBox(height: 24),
-                  Text('上传文件', style: NeonTheme.labelStyle(size: 14)),
-                  const SizedBox(height: 12),
-                  _buildFileUploadArea(),
-                  if (_documentType == DocumentType.invoice) ...[
-                    const SizedBox(height: 24),
-                    Text('税号验证 (可选)', style: NeonTheme.labelStyle(size: 14)),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _taxController,
-                      style: NeonTheme.bodyStyle(size: 14),
-                      decoration: InputDecoration(
-                        hintText: '如: 12100000470095016Q',
-                        suffixIcon: IconButton(
-                          icon: Icon(_isValid ? Icons.check_circle : Icons.verified_outlined, color: _isValid ? NeonTheme.neonGreen : NeonTheme.textSecondary),
-                          onPressed: _validateTax,
-                        ),
-                      ),
-                      onChanged: (v) {
-                        if (_isValid) setState(() => _isValid = false);
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 32),
                   SizedBox(
-                    width: double.infinity,
-                    child: NeonButton(
-                      label: '确认添加',
-                      icon: Icons.add,
-                      isLoading: _isUploading,
-                      onPressed: _addReceipt,
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: NeonTheme.neonCyan,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(width: 8),
+                  Text(_parseStatus!, style: NeonTheme.labelStyle(size: 11, color: NeonTheme.neonCyan)),
                 ],
               ),
             ),
+          ],
+          const Spacer(),
+          // 重新选择
+          TextButton.icon(
+            onPressed: _pickFile,
+            icon: const Icon(Icons.refresh, size: 16),
+            label: Text('重新选择', style: NeonTheme.labelStyle(size: 12)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTypeChip(DocumentType type) {
-    final isSelected = _documentType == type;
-    return GestureDetector(
-      onTap: () => setState(() => _documentType = type),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? NeonTheme.neonCyan.withOpacity(0.2) : NeonTheme.bgCard,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: isSelected ? NeonTheme.neonCyan : NeonTheme.neonPink.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(type.icon, size: 18, color: isSelected ? NeonTheme.neonCyan : NeonTheme.textSecondary),
-            const SizedBox(width: 8),
-            Text(type.label, style: NeonTheme.bodyStyle(size: 13, color: isSelected ? NeonTheme.neonCyan : NeonTheme.textSecondary)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFileUploadArea() {
-    if (_fileName != null) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: NeonTheme.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeonTheme.neonGreen.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            Icon(_fileFormat.icon, color: NeonTheme.neonGreen, size: 28),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_fileName!, style: NeonTheme.bodyStyle(size: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  if (_fileSize != null)
-                    Text('${(_fileSize! / 1024).toStringAsFixed(1)} KB', style: NeonTheme.labelStyle(size: 11)),
-                ],
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close, color: NeonTheme.textSecondary),
-              onPressed: () => setState(() {
-                _fileName = null;
-                _filePath = null;
-                _fileSize = null;
-              }),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: _pickFile,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: NeonTheme.bgCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeonTheme.neonPink.withOpacity(0.3), style: BorderStyle.solid),
-        ),
-        child: Column(
-          children: [
-            Icon(Icons.cloud_upload_outlined, size: 48, color: NeonTheme.neonPink.withOpacity(0.5)),
-            const SizedBox(height: 12),
-            Text('点击选择文件', style: NeonTheme.bodyStyle(size: 14, color: NeonTheme.textSecondary)),
-            const SizedBox(height: 6),
-            Text(
-              '支持: ${_documentType.allowedExtensions.join(", ")}',
-              style: NeonTheme.labelStyle(size: 11, color: NeonTheme.textSecondary.withOpacity(0.6)),
-            ),
-          ],
-        ),
-      ),
-    );
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
   }
 
   Future<void> _pickFile() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: _documentType.allowedExtensions,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -543,39 +561,69 @@ class _AddReceiptSheetState extends State<AddReceiptSheet> {
           _filePath = file.path;
           _fileSize = file.size;
           _fileFormat = FileFormat.fromExtension(file.extension ?? '');
+          _parseStatus = null;
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('文件选择失败: $e', style: NeonTheme.bodyStyle(size: 12)), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('选择失败', style: NeonTheme.bodyStyle(size: 12)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _validateTax() {
-    final valid = widget.validateTaxNumber(_taxController.text);
-    setState(() => _isValid = valid);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(valid ? '税号格式正确' : '税号格式无效', style: NeonTheme.bodyStyle(size: 12)),
-        backgroundColor: valid ? NeonTheme.neonGreen : Colors.red,
-      ),
-    );
-  }
+  Future<void> _uploadAndParse() async {
+    if (_fileName == null) return;
 
-  void _addReceipt() {
+    setState(() {
+      _isUploading = true;
+      _parseStatus = '准备解析...';
+    });
+
+    // 模拟解析过程（实际会调用OCR服务）
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _parseStatus = '识别文档类型...');
+    
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // 根据文件名/格式自动判断类型
+    DocumentType docType = _guessDocumentType(_fileName!);
+
     final receipt = Receipt(
       id: const Uuid().v4(),
-      documentType: _documentType,
+      documentType: docType,
       fileFormat: _fileFormat,
       fileName: _fileName,
       filePath: _filePath,
       fileSize: _fileSize,
-      taxNumber: _documentType == DocumentType.invoice && _taxController.text.isNotEmpty ? _taxController.text : null,
+      parseStatus: ParseStatus.pending, // 标记待解析，后台异步处理
       uploadedAt: DateTime.now(),
-      isValid: _isValid,
+      isValid: false,
     );
+
     widget.onAdd(receipt);
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
+  }
+
+  DocumentType _guessDocumentType(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.contains('发票') || lower.contains('invoice') || lower.contains('fapiao')) {
+      return DocumentType.invoice;
+    }
+    if (lower.contains('收据') || lower.contains('receipt')) {
+      return DocumentType.receipt;
+    }
+    if (lower.contains('合同') || lower.contains('contract')) {
+      return DocumentType.contract;
+    }
+    if (lower.contains('付款') || lower.contains('支付') || lower.contains('payment')) {
+      return DocumentType.paymentProof;
+    }
+    // 默认按发票处理，OCR会进一步识别
+    return DocumentType.invoice;
   }
 }
