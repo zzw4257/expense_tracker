@@ -1,17 +1,79 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/expense.dart';
+import '../models/settings.dart';
+import '../services/ai_service.dart';
 
 class ExpenseProvider extends ChangeNotifier {
   List<Expense> _expenses = [];
   bool _isLoading = false;
   String? _error;
+  late AppSettings _settings;
+  AiService? _aiService;
 
   List<Expense> get expenses => _expenses;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  AppSettings get settings => _settings;
+  AiService? get aiService => _aiService;
+
+  ExpenseProvider() {
+    _initSettings();
+  }
+
+  void _initSettings() {
+    // 从环境变量加载API Key
+    final geminiKey = dotenv.env['GEMINI_API_KEY'];
+    final openaiKey = dotenv.env['OPENAI_API_KEY'];
+    
+    _settings = AppSettings(
+      geminiApiKey: geminiKey,
+      openaiApiKey: openaiKey,
+      aiProvider: AiProvider.gemini, // 默认Gemini
+    );
+    
+    _aiService = AiService(_settings);
+  }
+
+  Future<void> updateSettings(AppSettings newSettings) async {
+    _settings = newSettings;
+    _aiService = AiService(_settings);
+    
+    // 保存设置
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('settings', jsonEncode(_settings.toJson()));
+    
+    notifyListeners();
+  }
+
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString('settings');
+    if (data != null) {
+      final json = jsonDecode(data);
+      // 合并环境变量中的API Key
+      json['geminiApiKey'] ??= dotenv.env['GEMINI_API_KEY'];
+      json['openaiApiKey'] ??= dotenv.env['OPENAI_API_KEY'];
+      _settings = AppSettings.fromJson(json);
+    } else {
+      _initSettings();
+    }
+    _aiService = AiService(_settings);
+    notifyListeners();
+  }
+
+  // AI摘要
+  Future<String?> summarizeText(String text) async {
+    return await _aiService?.summarize(text);
+  }
+
+  // AI提取结构化数据
+  Future<Map<String, dynamic>?> extractData(String text) async {
+    return await _aiService?.extractStructuredData(text);
+  }
 
   double get totalAmount => _expenses.fold(0, (sum, e) => sum + e.amount);
   double get pendingAmount =>

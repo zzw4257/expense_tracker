@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -301,7 +304,49 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => AddReceiptSheet(
-        onAdd: (receipt) => setState(() => _receipts.add(receipt)),
+        onAdd: (receipt, {String? ocrText, Map<String, dynamic>? extractedData, String? aiSummary}) {
+          setState(() {
+            _receipts.add(receipt);
+            
+            // 自动填充AI提取的数据
+            if (extractedData != null) {
+              // 填充金额
+              if (extractedData['amount'] != null && _amountController.text.isEmpty) {
+                final amount = extractedData['amount'];
+                if (amount is num) {
+                  _amountController.text = amount.toStringAsFixed(2);
+                }
+              }
+              
+              // 填充标题/描述
+              if (_titleController.text.isEmpty) {
+                final vendor = extractedData['vendor']?.toString() ?? '';
+                final items = extractedData['items'] as List?;
+                if (items != null && items.isNotEmpty) {
+                  _titleController.text = items.first.toString();
+                } else if (vendor.isNotEmpty) {
+                  _titleController.text = vendor;
+                }
+              }
+              
+              // 填充日期
+              if (extractedData['date'] != null) {
+                try {
+                  final dateStr = extractedData['date'].toString();
+                  final parsed = DateTime.tryParse(dateStr);
+                  if (parsed != null) {
+                    _date = parsed;
+                  }
+                } catch (_) {}
+              }
+            }
+            
+            // 如果有AI摘要，填充到备注
+            if (aiSummary != null && _descController.text.isEmpty) {
+              _descController.text = aiSummary;
+            }
+          });
+        },
         validateTaxNumber: context.read<ExpenseProvider>().validateTaxNumber,
       ),
     );
@@ -328,7 +373,7 @@ class _AddExpenseSheetState extends State<AddExpenseSheet> {
 
 // 简化的凭证上传组件 - 自动解析
 class AddReceiptSheet extends StatefulWidget {
-  final Function(Receipt) onAdd;
+  final Function(Receipt, {String? ocrText, Map<String, dynamic>? extractedData, String? aiSummary}) onAdd;
   final bool Function(String) validateTaxNumber;
 
   const AddReceiptSheet({super.key, required this.onAdd, required this.validateTaxNumber});
@@ -341,9 +386,14 @@ class _AddReceiptSheetState extends State<AddReceiptSheet> {
   String? _fileName;
   String? _filePath;
   int? _fileSize;
+  Uint8List? _fileBytes;
   FileFormat _fileFormat = FileFormat.image;
   bool _isUploading = false;
   String? _parseStatus;
+  String? _ocrText;
+  Map<String, dynamic>? _extractedData;
+  String? _aiSummary;
+  bool _isInvoice = false;
 
   @override
   Widget build(BuildContext context) {
@@ -552,6 +602,7 @@ class _AddReceiptSheetState extends State<AddReceiptSheet> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+        withData: true, // 获取文件字节数据
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -560,15 +611,20 @@ class _AddReceiptSheetState extends State<AddReceiptSheet> {
           _fileName = file.name;
           _filePath = file.path;
           _fileSize = file.size;
+          _fileBytes = file.bytes;
           _fileFormat = FileFormat.fromExtension(file.extension ?? '');
           _parseStatus = null;
+          _ocrText = null;
+          _extractedData = null;
+          _aiSummary = null;
+          _isInvoice = false;
         });
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('选择失败', style: NeonTheme.bodyStyle(size: 12)),
+            content: Text('选择失败: $e', style: NeonTheme.bodyStyle(size: 12)),
             backgroundColor: Colors.red,
           ),
         );
@@ -584,29 +640,119 @@ class _AddReceiptSheetState extends State<AddReceiptSheet> {
       _parseStatus = '准备解析...';
     });
 
-    // 模拟解析过程（实际会调用OCR服务）
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (mounted) setState(() => _parseStatus = '识别文档类型...');
+    try {
+      // Step 1: 调用OCR服务
+      if (mounted) setState(() => _parseStatus = 'OCR识别中...');
+      
+      final ocrResult = await _callOcrService();
+      if (ocrResult != null) {
+        _ocrText = ocrResult['text'];
+        _isInvoice = ocrResult['is_invoice'] ?? false;
+      }
+
+      // Step 2: 调用AI服务提取结构化数据
+      if (_ocrText != null && _ocrText!.isNotEmpty && mounted) {
+        setState(() => _parseStatus = 'AI分析中...');
+        
+        final provider = context.read<ExpenseProvider>();
+        
+        // 并行调用摘要和结构化提取
+        final results = await Future.wait([
+          provider.summarizeText(_ocrText!),
+          provider.extractData(_ocrText!),
+        ]);
+        
+        _aiSummary = results[0] as String?;
+        _extractedData = results[1] as Map<String, dynamic>?;
+      }
+
+      // Step 3: 根据OCR和AI结果判断文档类型
+      DocumentType docType = _determineDocumentType();
+
+      final receipt = Receipt(
+        id: const Uuid().v4(),
+        documentType: docType,
+        fileFormat: _fileFormat,
+        fileName: _fileName,
+        filePath: _filePath,
+        fileSize: _fileSize,
+        parseStatus: _ocrText != null ? ParseStatus.completed : ParseStatus.failed,
+        uploadedAt: DateTime.now(),
+        isValid: _isInvoice,
+        extractedText: _ocrText,
+        aiSummary: _aiSummary,
+        parsedData: _extractedData,
+      );
+
+      widget.onAdd(
+        receipt,
+        ocrText: _ocrText,
+        extractedData: _extractedData,
+        aiSummary: _aiSummary,
+      );
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+          _parseStatus = '解析失败: $e';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('解析失败: $e', style: NeonTheme.bodyStyle(size: 12)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<Map<String, dynamic>?> _callOcrService() async {
+    if (_fileBytes == null) return null;
     
-    await Future.delayed(const Duration(milliseconds: 300));
+    try {
+      final uri = Uri.parse('http://localhost:8000/pdf/parse');
+      final request = http.MultipartRequest('POST', uri);
+      
+      request.files.add(http.MultipartFile.fromBytes(
+        'file',
+        _fileBytes!,
+        filename: _fileName,
+      ));
 
-    // 根据文件名/格式自动判断类型
-    DocumentType docType = _guessDocumentType(_fileName!);
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+      );
+      final response = await http.Response.fromStream(streamedResponse);
 
-    final receipt = Receipt(
-      id: const Uuid().v4(),
-      documentType: docType,
-      fileFormat: _fileFormat,
-      fileName: _fileName,
-      filePath: _filePath,
-      fileSize: _fileSize,
-      parseStatus: ParseStatus.pending, // 标记待解析，后台异步处理
-      uploadedAt: DateTime.now(),
-      isValid: false,
-    );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('OCR service error: $e');
+    }
+    return null;
+  }
 
-    widget.onAdd(receipt);
-    if (mounted) Navigator.pop(context);
+  DocumentType _determineDocumentType() {
+    // 优先使用AI识别结果
+    if (_extractedData != null) {
+      final invoiceType = _extractedData!['invoiceType']?.toString().toLowerCase() ?? '';
+      if (invoiceType.contains('receipt') || invoiceType.contains('收据')) {
+        return DocumentType.receipt;
+      }
+      if (invoiceType.contains('contract') || invoiceType.contains('合同')) {
+        return DocumentType.contract;
+      }
+    }
+    
+    // 其次使用OCR关键词检测
+    if (_isInvoice) {
+      return DocumentType.invoice;
+    }
+    
+    // 最后根据文件名猜测
+    return _guessDocumentType(_fileName!);
   }
 
   DocumentType _guessDocumentType(String fileName) {
